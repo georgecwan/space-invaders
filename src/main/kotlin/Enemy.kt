@@ -15,4 +15,8 @@ class Enemy(var x: Double, var y: Double, val type: Int) {
     fun getBoundary(): Rectangle2D {
         return Rectangle2D(x, y, image.width, image.height)
     }
+
+    fun intersects(other: Player): Boolean {
+        return this.getBoundary().intersects(other.getBoundary())
+    }
 }

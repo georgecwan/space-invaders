@@ -60,6 +60,7 @@ object Model : Observable {
     fun getCurrentScene(): Scene {
         return when (currentScene) {
             1 -> {
+                gameScreen.animation.stop()
                 titleScreen
             }
 
@@ -68,10 +69,14 @@ object Model : Observable {
             }
 
             3 -> {
+                gameScreen.animation.stop()
+                victoryScreen.refresh()
                 victoryScreen
             }
 
             else -> { // 4
+                gameScreen.animation.stop()
+                lossScreen.refresh()
                 lossScreen
             }
         }

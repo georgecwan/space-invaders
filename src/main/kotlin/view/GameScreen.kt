@@ -1,5 +1,6 @@
 package view
 
+import Enemy
 import EnemyBullet
 import PlayerBullet
 import javafx.animation.AnimationTimer
@@ -45,6 +46,14 @@ class GameScreen(private val model: Model) :
                 var enemyHitWall = false
                 for (enemy in model.enemies) {
                     enemy.x += model.enemySpeed * model.enemyDirection
+                    if (enemy.intersects(model.player)) {
+                        if (model.lives == 1) {
+                            stop()
+                            model.setCurrentScene(4)
+                            return
+                        }
+                        loseLife()
+                    }
                     if (Random.nextInt(15000) <= model.enemyBulletOdds[model.level]!!) {
                         model.enemyBullets.add(EnemyBullet(enemy.x + 15, enemy.y + 10, enemy.type))
                     }
@@ -56,31 +65,53 @@ class GameScreen(private val model: Model) :
                     model.enemyDirection *= -1
                     for (enemy in model.enemies) {
                         enemy.y += 20.0
+                        // Enemy reaches bottom = instant loss
+                        if (enemy.y >= model.getWindowHeight() - enemy.image.height) {
+                            stop()
+                            model.setCurrentScene(4)
+                            return
+                        }
                     }
                     val startledEnemy = model.enemies[Random.nextInt(model.enemies.size)]
                     model.enemyBullets.add(EnemyBullet(startledEnemy.x + 15, startledEnemy.y + 10, startledEnemy.type))
                 }
                 // Player bullet
+                val collidedPairs = mutableListOf<Pair<PlayerBullet, Enemy>>()
                 for (bullet in model.playerBullets) {
                     for (enemy in model.enemies) {
                         if (bullet.intersects(enemy)) {
-                            model.playerBullets.remove(bullet)
-                            model.enemies.remove(enemy)
+                            collidedPairs.add(Pair(bullet, enemy))
                             model.score += enemy.type * 10
                         }
                     }
                     bullet.y -= model.playerBulletSpeed
                 }
+                for (pair in collidedPairs) {
+                    model.playerBullets.remove(pair.first)
+                    model.enemies.remove(pair.second)
+                }
+                // Check for win
+                if (model.enemies.isEmpty()) {
+                    stop()
+                    if (model.level < 3) model.nextLevel() else model.setCurrentScene(3)
+                    return
+                }
+                val explodedBullets = mutableListOf<EnemyBullet>()
                 // Enemy bullet
                 for (bullet in model.enemyBullets) {
                     if (bullet.intersects(model.player)) {
-                        model.enemyBullets.remove(bullet)
+                        explodedBullets.add(bullet)
                         if (model.lives == 1) {
+                            stop()
                             model.setCurrentScene(4)
+                            return
                         }
-                        model.lives--
+                        loseLife()
                     }
                     bullet.y += model.enemyBulletSpeed[model.level]!!
+                }
+                for (bullet in explodedBullets) {
+                    model.enemyBullets.remove(bullet)
                 }
                 // Draw objects
                 drawImage(model.player.image, model.player.x, model.player.y)
@@ -102,8 +133,8 @@ class GameScreen(private val model: Model) :
         root = pane
         this.setOnKeyPressed { event ->
             when (event.code) {
-                KeyCode.A -> model.player.moveLeft = 1
-                KeyCode.D -> model.player.moveRight = 1
+                KeyCode.A, KeyCode.LEFT -> model.player.moveLeft = 1
+                KeyCode.D, KeyCode.RIGHT -> model.player.moveRight = 1
                 KeyCode.SPACE -> {
                     if (model.player.reloadTimer == 0) {
                         model.playerBullets.add(PlayerBullet(model.player.x + 15, model.player.y - 20))
@@ -117,12 +148,29 @@ class GameScreen(private val model: Model) :
         }
         this.setOnKeyReleased { event ->
             when (event.code) {
-                KeyCode.A -> model.player.moveLeft = 0
-                KeyCode.D -> model.player.moveRight = 0
+                KeyCode.A, KeyCode.LEFT -> model.player.moveLeft = 0
+                KeyCode.D, KeyCode.RIGHT -> model.player.moveRight = 0
                 else -> {
                 }
             }
         }
     }
 
+    fun loseLife() {
+        model.lives--
+        var emptySpace = true
+        do {
+            model.player.x = Random.nextDouble(model.getWindowWidth() - model.player.image.width)
+            for (checkEnemy in model.enemies) {
+                if (checkEnemy.intersects(model.player)) {
+                    emptySpace = false
+                }
+            }
+            for (checkBullet in model.enemyBullets) {
+                if (checkBullet.intersects(model.player)) {
+                    emptySpace = false
+                }
+            }
+        } while (!emptySpace)
+    }
 }

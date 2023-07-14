@@ -23,7 +23,7 @@ class TitleScreen(private val model: Model) :
         Label("\nENTER - Start Game").apply {
             style = "-fx-font-size: 20px;"
         },
-        Label("A, D - Move ship left or right").apply {
+        Label("A, D or Arrow Keys - Move ship left or right").apply {
             style = "-fx-font-size: 20px;"
         },
         Label("SPACE - Fire!").apply {
