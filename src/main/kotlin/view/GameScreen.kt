@@ -12,6 +12,7 @@ import javafx.scene.layout.Background
 import javafx.scene.layout.BackgroundFill
 import javafx.scene.layout.CornerRadii
 import javafx.scene.layout.Pane
+import javafx.scene.media.AudioClip
 import javafx.scene.paint.Color
 import javafx.scene.text.Font
 import model.Model
@@ -47,6 +48,8 @@ class GameScreen(private val model: Model) :
                 for (enemy in model.enemies) {
                     enemy.x += model.enemySpeed * model.enemyDirection
                     if (enemy.intersects(model.player)) {
+                        val sound = javaClass.classLoader.getResource("sounds/explosion.wav")?.toString()
+                        AudioClip(sound).play()
                         if (model.lives == 1) {
                             stop()
                             model.setCurrentScene(4)
@@ -86,6 +89,10 @@ class GameScreen(private val model: Model) :
                     }
                     bullet.y -= model.playerBulletSpeed
                 }
+                if (collidedPairs.isNotEmpty()) {
+                    val sound = javaClass.classLoader.getResource("sounds/invaderkilled.wav")?.toString()
+                    AudioClip(sound).play()
+                }
                 for (pair in collidedPairs) {
                     model.playerBullets.remove(pair.first)
                     model.enemies.remove(pair.second)
@@ -101,6 +108,8 @@ class GameScreen(private val model: Model) :
                 for (bullet in model.enemyBullets) {
                     if (bullet.intersects(model.player)) {
                         explodedBullets.add(bullet)
+                        val sound = javaClass.classLoader.getResource("sounds/explosion.wav")?.toString()
+                        AudioClip(sound).play()
                         if (model.lives == 1) {
                             stop()
                             model.setCurrentScene(4)
@@ -124,6 +133,20 @@ class GameScreen(private val model: Model) :
                 for (bullet in model.enemyBullets) {
                     drawImage(bullet.image, bullet.x, bullet.y)
                 }
+                // Make sounds
+                if (model.enemySoundCountdown <= 0) {
+                    val sound = when (Random.nextInt(4)) {
+                        0 -> javaClass.classLoader.getResource("sounds/fastinvader1.wav")?.toString()
+                        1 -> javaClass.classLoader.getResource("sounds/fastinvader2.wav")?.toString()
+                        2 -> javaClass.classLoader.getResource("sounds/fastinvader3.wav")?.toString()
+                        else -> javaClass.classLoader.getResource("sounds/fastinvader4.wav")?.toString()
+                    }
+                    AudioClip(sound).play()
+                    model.enemySoundCountdown = 20 + 2 * model.enemies.size
+                }
+                else {
+                    model.enemySoundCountdown--
+                }
             }
         }
     }
@@ -136,7 +159,9 @@ class GameScreen(private val model: Model) :
                 KeyCode.A, KeyCode.LEFT -> model.player.moveLeft = 1
                 KeyCode.D, KeyCode.RIGHT -> model.player.moveRight = 1
                 KeyCode.SPACE -> {
-                    if (model.player.reloadTimer == 0) {
+                    if (model.player.reloadTimer <= 0) {
+                        val sound = javaClass.classLoader.getResource("sounds/shoot.wav")?.toString()
+                        AudioClip(sound).play()
                         model.playerBullets.add(PlayerBullet(model.player.x + 15, model.player.y - 20))
                         model.player.reloadTimer = 30
                     }
@@ -158,8 +183,9 @@ class GameScreen(private val model: Model) :
 
     fun loseLife() {
         model.lives--
-        var emptySpace = true
+        var emptySpace: Boolean
         do {
+            emptySpace = true
             model.player.x = Random.nextDouble(model.getWindowWidth() - model.player.image.width)
             for (checkEnemy in model.enemies) {
                 if (checkEnemy.intersects(model.player)) {

@@ -100,6 +100,7 @@ object Model : Observable {
     val playerSpeed = 2.2
     val playerBulletSpeed = 4.0
     var enemySpeed = 0.0
+    var enemySoundCountdown = 0
 
     // Maps level to values
     val enemyBaseSpeed = mapOf(1 to 0.5, 2 to 1.3, 3 to 2.1)
@@ -109,6 +110,8 @@ object Model : Observable {
     fun startGame(level: Int) {
         setCurrentScene(2)
         this.level = level
+        player.moveLeft = 0
+        player.moveRight = 0
         lives = 3
         score = 0
         enemies.clear()
