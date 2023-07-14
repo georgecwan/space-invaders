@@ -21,8 +21,13 @@ class SpaceInvaders : Application() {
             isResizable = false
             show()
             addEventHandler(KeyEvent.KEY_PRESSED) { event ->
-                if (event.code == KeyCode.Q) {
-                    Platform.exit()
+                when (event.code) {
+                    KeyCode.DIGIT1 -> myModel.level = 1
+                    KeyCode.DIGIT2 -> myModel.level = 2
+                    KeyCode.DIGIT3 -> myModel.level = 3
+                    KeyCode.Q -> Platform.exit()
+                    else -> {
+                    }
                 }
             }
         }
